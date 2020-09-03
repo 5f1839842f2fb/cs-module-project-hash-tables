@@ -56,7 +56,7 @@ class HashTable:
         """
 
         # Your code here
-
+        #return hash(key) % self.capacity
 
     def djb2(self, key):
         """
