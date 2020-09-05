@@ -7,6 +7,12 @@ class HashTableEntry:
         self.value = value
         self.next = None
 
+    def find(self, key):
+        if self.key == key:
+            return self.value
+        if self.next:
+            return self.next.find(key)
+        return None
 
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
@@ -24,6 +30,7 @@ class HashTable:
         # Your code here
         self.capacity = capacity
         self.table = [None] * capacity
+        self.elements = 0
 
     def get_num_slots(self):
         """
@@ -46,7 +53,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        return self.elements/self.capacity
 
     def fnv1(self, key):
         """
@@ -78,7 +85,7 @@ class HashTable:
         between within the storage capacity of the hash table.
         """
         #return self.fnv1(key) % self.capacity
-        return self.djb2(key) % self.capacity
+        return self.djb2(key) 
 
     def put(self, key, value):
         """
@@ -89,7 +96,17 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        self.table[self.djb2(key)] = value
+        self.elements =+ 1
+        hashIndex = self.djb2(key)
+        bucket = self.table[hashIndex]
+        if bucket is None:
+            self.table[hashIndex] = HashTableEntry(key, value)
+        else:
+            node = HashTableEntry(key, value)
+            node.next = bucket
+            self.table[hashIndex] = node
+        if self.get_load_factor() > .7:
+            self.resize(self.capacity * 2)
 
     def delete(self, key):
         """
@@ -100,8 +117,23 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        self.table[self.djb2(key)] = None
-
+        hashIndex = self.djb2(key)
+        currentBucket = self.table[hashIndex]
+        if currentBucket is None:
+            print("Key not found")
+        elif currentBucket.key == key:
+            self.table[hashIndex] = currentBucket.next
+            self.elements -= 1
+        else:
+            while currentBucket.next is not None:
+                previousBucket = currentBucket
+                currentBucket = currentBucket.next
+                if currentBucket.key == key:
+                    previousBucket.next = currentBucket.next
+                    self.elements -= 1
+                    break
+        if self.get_load_factor() < .2 and self.capacity != 8:
+            self.resize(self.capacity / 2)
 
     def get(self, key):
         """
@@ -112,8 +144,9 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        if(self.table[self.djb2(key)]):
-            return self.table[self.djb2(key)]
+        hashIndex = self.djb2(key)
+        if self.table[hashIndex] is not None:
+            return self.table[hashIndex].find(key)
         else:
              return None
 
@@ -126,7 +159,17 @@ class HashTable:
         Implement this.
         """
         # Your code here
-
+        self.capacity = int(new_capacity)
+        oldTable = self.table
+        self.table = [None] * self.capacity
+        for element in oldTable:
+            current = element
+            if element is not None:
+                self.put(element.key, element.value)
+                while current.next is not None:
+                    current = current.next
+                    self.put(current.key, current.value)
+            
 
 
 if __name__ == "__main__":
